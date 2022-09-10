@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestScoreCalculation(t *testing.T) {
+func TestCalculateScore(t *testing.T) {
 	type TestScenario struct {
 		code        []int
 		guess       []int
@@ -49,5 +49,46 @@ func TestIndexToCode(t *testing.T) {
 			t.Error("Expected code", scenario.expectation, "but got", code, "for index",
 				scenario.index, "and", scenario.numberOfColours, "colours")
 		}
+	}
+}
+
+func TestGuessIsPossible(t *testing.T) {
+	type TestScenario struct {
+		facts []CodeScore
+		guess []int
+	}
+
+	possible := []TestScenario{
+		{facts: []CodeScore{{guess: []int{0, 1, 2, 3}, score: Score{rightValueAndPosition: 1}}}, guess: []int{1, 1, 1, 1}},
+		{facts: []CodeScore{{guess: []int{1, 2, 2, 2}, score: Score{rightValueWrongPosition: 1}}}, guess: []int{0, 1, 0, 0}},
+	}
+
+	for _, scenario := range possible {
+		if !GuessIsPossible(scenario.facts, scenario.guess) {
+			t.Error("Expected", scenario.guess, "to be valid for facts:", scenario.facts)
+		}
+	}
+}
+
+func TestFindKunthPaperSolution(t *testing.T) {
+	facts := []CodeScore{
+		{guess: []int{0, 0, 1, 1}, score: Score{rightValueAndPosition: 1}},
+		{guess: []int{0, 2, 3, 3}, score: Score{rightValueWrongPosition: 1}},
+		{guess: []int{2, 4, 1, 5}, score: Score{rightValueAndPosition: 1, rightValueWrongPosition: 2}},
+		{guess: []int{0, 3, 5, 1}, score: Score{rightValueAndPosition: 1, rightValueWrongPosition: 1}},
+	}
+
+	combinations := NumberOfCombinations(4, 6)
+	matches := [][]int{}
+	for i := 0; i < combinations; i++ {
+		guess := IndexToCode(4, 6, i)
+
+		if GuessIsPossible(facts, guess) {
+			matches = append(matches, guess)
+		}
+	}
+
+	if !reflect.DeepEqual(matches, [][]int{{2, 5, 2, 1}}) {
+		t.Error("Expected only match to be 2521 but got", matches)
 	}
 }

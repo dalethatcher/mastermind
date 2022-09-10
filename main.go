@@ -10,6 +10,11 @@ type Score struct {
 	rightValueWrongPosition int
 }
 
+type CodeScore struct {
+	guess []int
+	score Score
+}
+
 func CalculateScore(code []int, guess []int) Score {
 	if len(code) == 0 || len(code) != len(guess) {
 		panic(fmt.Sprint("Passed invalid code or guess", code, "and", guess))
@@ -44,7 +49,7 @@ func CalculateScore(code []int, guess []int) Score {
 }
 
 func IndexToCode(numberOfHoles int, numberOfColours int, index int) []int {
-	if index > int(math.Pow(float64(numberOfColours), float64(numberOfHoles)))-1 {
+	if index > NumberOfCombinations(numberOfHoles, numberOfColours)-1 {
 		panic(fmt.Sprint("index ", index, " is larger than the number of combinations for ", numberOfHoles,
 			" holes and ", numberOfColours, " colours!"))
 	}
@@ -60,8 +65,24 @@ func IndexToCode(numberOfHoles int, numberOfColours int, index int) []int {
 	return result
 }
 
+func NumberOfCombinations(numberOfHoles int, numberOfColours int) int {
+	return int(math.Pow(float64(numberOfColours), float64(numberOfHoles)))
+}
+
+func GuessIsPossible(facts []CodeScore, guess []int) bool {
+	for _, fact := range facts {
+		score := CalculateScore(guess, fact.guess)
+
+		if score != fact.score {
+			return false
+		}
+	}
+
+	return true
+}
+
 func main() {
-	for i := 0; i < 256; i++ {
+	for i := 0; i < NumberOfCombinations(4, 4); i++ {
 		fmt.Println(IndexToCode(4, 4, i))
 	}
 }
