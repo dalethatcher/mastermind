@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/golang-collections/go-datastructures/bitarray"
+	"log"
 	"math"
 )
 
@@ -65,6 +67,26 @@ func IndexToCode(numberOfHoles int, numberOfColours int, index int) []int {
 	return result
 }
 
+func CodeToIndex(numberOfHoles int, numberOfColours int, code []int) int {
+	var result int
+
+	for i := 0; i < numberOfHoles; i++ {
+		result = (result * numberOfColours) + code[i]
+	}
+
+	return result
+}
+
+func SetBits(ba *bitarray.BitArray, bits []int) error {
+	for _, bit := range bits {
+		if err := (*ba).SetBit(uint64(bit)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func NumberOfCombinations(numberOfHoles int, numberOfColours int) int {
 	return int(math.Pow(float64(numberOfColours), float64(numberOfHoles)))
 }
@@ -79,6 +101,23 @@ func GuessIsPossible(facts []CodeScore, guess []int) bool {
 	}
 
 	return true
+}
+
+func FindPossibleCodes(numberOfHoles int, numberOfColours int, facts []CodeScore) bitarray.BitArray {
+	result := bitarray.NewBitArray(uint64(NumberOfCombinations(numberOfHoles, numberOfColours)))
+
+	combinations := NumberOfCombinations(numberOfHoles, numberOfColours)
+	for i := 0; i < combinations; i++ {
+		guess := IndexToCode(numberOfHoles, numberOfColours, i)
+
+		if GuessIsPossible(facts, guess) {
+			if result.SetBit(uint64(i)) != nil {
+				log.Panicln("Failed to set bit ", i)
+			}
+		}
+	}
+
+	return result
 }
 
 func main() {
