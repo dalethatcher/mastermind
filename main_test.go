@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/golang-collections/go-datastructures/bitarray"
+	"github.com/stretchr/testify/assert"
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -105,32 +106,36 @@ func TestCodeToIndex(t *testing.T) {
 	}
 }
 
-func TestFindPossibleCodes(t *testing.T) {
+func TestFindPossibleCodesIndicies(t *testing.T) {
 	facts := []CodeScore{
 		{guess: []int{1, 1}, score: Score{rightValueAndPosition: 1}},
 	}
 
-	possibleCodes := FindPossibleCodes(2, 2, facts)
+	possibleCodes := FindPossibleCodesIndicies(2, 2, facts)
 
-	expectation := bitarray.NewBitArray(4)
-	if SetBits(&expectation, []int{1, 2}) != nil {
-		t.Fatal("Failed to set bits!")
+	expectation := []uint64{1, 2}
+	assert.Equal(t, expectation, possibleCodes.ToNums(), "code indices should match")
+}
+
+func TestPossibleNonFinalScores(t *testing.T) {
+	result := PossibleScores(3)
+	expectation := []Score{
+		{},
+		{rightValueWrongPosition: 1},
+		{rightValueWrongPosition: 2},
+		{rightValueWrongPosition: 3},
+		{rightValueAndPosition: 1},
+		{rightValueAndPosition: 1, rightValueWrongPosition: 1},
+		{rightValueAndPosition: 1, rightValueWrongPosition: 2},
+		{rightValueAndPosition: 2},
+		{rightValueAndPosition: 3},
 	}
 
-	if !expectation.Equals(possibleCodes) {
-		for i := uint64(0); i < 4; i++ {
-			var e, r bool
-			var err error
-			if r, err = possibleCodes.GetBit(i); err != nil {
-				t.Fatal("Failed to get value", i, "from possibleCodes")
-			}
-			if e, err = expectation.GetBit(i); err != nil {
-				t.Fatal("Failed to get value", i, "from expectation")
-			}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].rightValueAndPosition < result[j].rightValueAndPosition ||
+			(result[i].rightValueAndPosition == result[j].rightValueAndPosition &&
+				result[i].rightValueWrongPosition < result[j].rightValueWrongPosition)
+	})
 
-			if e != r {
-				t.Error("Index", i, "differs in result", r, "and expectation", e)
-			}
-		}
-	}
+	assert.Equal(t, expectation, result, "did not get expected scores")
 }

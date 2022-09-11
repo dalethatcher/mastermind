@@ -103,7 +103,7 @@ func GuessIsPossible(facts []CodeScore, guess []int) bool {
 	return true
 }
 
-func FindPossibleCodes(numberOfHoles int, numberOfColours int, facts []CodeScore) bitarray.BitArray {
+func FindPossibleCodesIndicies(numberOfHoles int, numberOfColours int, facts []CodeScore) bitarray.BitArray {
 	result := bitarray.NewBitArray(uint64(NumberOfCombinations(numberOfHoles, numberOfColours)))
 
 	combinations := NumberOfCombinations(numberOfHoles, numberOfColours)
@@ -120,8 +120,38 @@ func FindPossibleCodes(numberOfHoles int, numberOfColours int, facts []CodeScore
 	return result
 }
 
+func PossibleScores(numberOfHoles int) []Score {
+	result := []Score{}
+
+	for correct := 0; correct <= numberOfHoles; correct++ {
+		for wrongPosition := 0; correct+wrongPosition <= numberOfHoles; wrongPosition++ {
+			if !(correct == numberOfHoles-1 && wrongPosition == 1) {
+				result = append(result, Score{rightValueAndPosition: correct, rightValueWrongPosition: wrongPosition})
+			}
+		}
+	}
+
+	return result
+}
+
 func main() {
-	for i := 0; i < NumberOfCombinations(4, 4); i++ {
-		fmt.Println(IndexToCode(4, 4, i))
+	numberOfHoles := 3
+	numberOfColours := 4
+	numberOfCombinations := NumberOfCombinations(numberOfHoles, numberOfColours)
+	foundScores := make(map[Score]bool)
+
+	for i := 0; i < numberOfCombinations; i++ {
+		code := IndexToCode(numberOfHoles, numberOfColours, i)
+
+		for j := 0; j < numberOfCombinations; j++ {
+			guess := IndexToCode(numberOfHoles, numberOfCombinations, j)
+
+			score := CalculateScore(code, guess)
+
+			if _, ok := foundScores[score]; !ok {
+				fmt.Println("Found new score:", score)
+				foundScores[score] = true
+			}
+		}
 	}
 }
