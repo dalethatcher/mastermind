@@ -7,9 +7,14 @@ import (
 	"math"
 )
 
+type Rules struct {
+	holes   int
+	colours int
+}
+
 type Score struct {
-	rightValueAndPosition   int
-	rightValueWrongPosition int
+	correct   int
+	misplaced int
 }
 
 type CodeScore struct {
@@ -30,7 +35,7 @@ func CalculateScore(code []int, guess []int) Score {
 		if guess[i] == c {
 			codeMatched[i] = true
 			guessMatched[i] = true
-			result.rightValueAndPosition++
+			result.correct++
 		}
 	}
 
@@ -42,7 +47,7 @@ func CalculateScore(code []int, guess []int) Score {
 		for j, g := range guess {
 			if i != j && c == g && !codeMatched[j] {
 				codeMatched[j] = true
-				result.rightValueWrongPosition++
+				result.misplaced++
 			}
 		}
 	}
@@ -50,28 +55,28 @@ func CalculateScore(code []int, guess []int) Score {
 	return result
 }
 
-func IndexToCode(numberOfHoles int, numberOfColours int, index int) []int {
-	if index > NumberOfCombinations(numberOfHoles, numberOfColours)-1 {
-		panic(fmt.Sprint("index ", index, " is larger than the number of combinations for ", numberOfHoles,
-			" holes and ", numberOfColours, " colours!"))
+func IndexToCode(rules Rules, index int) []int {
+	if index > NumberOfCombinations(rules)-1 {
+		panic(fmt.Sprint("index ", index, " is larger than the number of combinations for ", rules.holes,
+			" holes and ", rules.colours, " colours!"))
 	}
 
-	result := make([]int, numberOfHoles)
-	for i := numberOfHoles - 1; i >= 0 && index > 0; i-- {
-		colour := index % numberOfColours
+	result := make([]int, rules.holes)
+	for i := rules.holes - 1; i >= 0 && index > 0; i-- {
+		colour := index % rules.colours
 
 		result[i] = colour
-		index = index / numberOfColours
+		index = index / rules.colours
 	}
 
 	return result
 }
 
-func CodeToIndex(numberOfHoles int, numberOfColours int, code []int) int {
+func CodeToIndex(rules Rules, code []int) int {
 	var result int
 
-	for i := 0; i < numberOfHoles; i++ {
-		result = (result * numberOfColours) + code[i]
+	for i := 0; i < rules.holes; i++ {
+		result = (result * rules.colours) + code[i]
 	}
 
 	return result
@@ -87,8 +92,8 @@ func SetBits(ba *bitarray.BitArray, bits []int) error {
 	return nil
 }
 
-func NumberOfCombinations(numberOfHoles int, numberOfColours int) int {
-	return int(math.Pow(float64(numberOfColours), float64(numberOfHoles)))
+func NumberOfCombinations(rules Rules) int {
+	return int(math.Pow(float64(rules.colours), float64(rules.holes)))
 }
 
 func GuessIsPossible(facts []CodeScore, guess []int) bool {
@@ -103,12 +108,12 @@ func GuessIsPossible(facts []CodeScore, guess []int) bool {
 	return true
 }
 
-func FindPossibleCodesIndicies(numberOfHoles int, numberOfColours int, facts []CodeScore) bitarray.BitArray {
-	result := bitarray.NewBitArray(uint64(NumberOfCombinations(numberOfHoles, numberOfColours)))
+func FindPossibleCodesIndicies(rules Rules, facts []CodeScore) bitarray.BitArray {
+	result := bitarray.NewBitArray(uint64(NumberOfCombinations(rules)))
 
-	combinations := NumberOfCombinations(numberOfHoles, numberOfColours)
+	combinations := NumberOfCombinations(rules)
 	for i := 0; i < combinations; i++ {
-		guess := IndexToCode(numberOfHoles, numberOfColours, i)
+		guess := IndexToCode(rules, i)
 
 		if GuessIsPossible(facts, guess) {
 			if result.SetBit(uint64(i)) != nil {
@@ -120,13 +125,13 @@ func FindPossibleCodesIndicies(numberOfHoles int, numberOfColours int, facts []C
 	return result
 }
 
-func PossibleScores(numberOfHoles int) []Score {
+func PossibleScores(rules Rules) []Score {
 	result := []Score{}
 
-	for correct := 0; correct <= numberOfHoles; correct++ {
-		for wrongPosition := 0; correct+wrongPosition <= numberOfHoles; wrongPosition++ {
-			if !(correct == numberOfHoles-1 && wrongPosition == 1) {
-				result = append(result, Score{rightValueAndPosition: correct, rightValueWrongPosition: wrongPosition})
+	for correct := 0; correct <= rules.holes; correct++ {
+		for wrongPosition := 0; correct+wrongPosition <= rules.holes; wrongPosition++ {
+			if !(correct == rules.holes-1 && wrongPosition == 1) {
+				result = append(result, Score{correct: correct, misplaced: wrongPosition})
 			}
 		}
 	}
@@ -135,16 +140,15 @@ func PossibleScores(numberOfHoles int) []Score {
 }
 
 func main() {
-	numberOfHoles := 3
-	numberOfColours := 4
-	numberOfCombinations := NumberOfCombinations(numberOfHoles, numberOfColours)
+	rules := Rules{3, 4}
+	numberOfCombinations := NumberOfCombinations(rules)
 	foundScores := make(map[Score]bool)
 
 	for i := 0; i < numberOfCombinations; i++ {
-		code := IndexToCode(numberOfHoles, numberOfColours, i)
+		code := IndexToCode(rules, i)
 
 		for j := 0; j < numberOfCombinations; j++ {
-			guess := IndexToCode(numberOfHoles, numberOfCombinations, j)
+			guess := IndexToCode(rules, j)
 
 			score := CalculateScore(code, guess)
 

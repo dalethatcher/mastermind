@@ -15,10 +15,10 @@ func TestCalculateScore(t *testing.T) {
 	}
 
 	scenarios := []TestScenario{
-		{code: []int{1, 2, 3, 4}, guess: []int{1, 1, 1, 1}, expectation: Score{rightValueAndPosition: 1}},
-		{code: []int{1, 2, 2, 2}, guess: []int{3, 1, 3, 3}, expectation: Score{rightValueWrongPosition: 1}},
-		{code: []int{1, 2, 3, 4}, guess: []int{1, 1, 2, 5}, expectation: Score{rightValueAndPosition: 1, rightValueWrongPosition: 1}},
-		{code: []int{1, 1, 2, 2}, guess: []int{1, 2, 1, 2}, expectation: Score{rightValueAndPosition: 2, rightValueWrongPosition: 2}},
+		{code: []int{1, 2, 3, 4}, guess: []int{1, 1, 1, 1}, expectation: Score{correct: 1}},
+		{code: []int{1, 2, 2, 2}, guess: []int{3, 1, 3, 3}, expectation: Score{misplaced: 1}},
+		{code: []int{1, 2, 3, 4}, guess: []int{1, 1, 2, 5}, expectation: Score{correct: 1, misplaced: 1}},
+		{code: []int{1, 1, 2, 2}, guess: []int{1, 2, 1, 2}, expectation: Score{correct: 2, misplaced: 2}},
 	}
 
 	for _, scenario := range scenarios {
@@ -32,24 +32,24 @@ func TestCalculateScore(t *testing.T) {
 
 func TestIndexToCode(t *testing.T) {
 	type TestScenario struct {
-		numberOfColours int
-		index           int
-		expectation     []int
+		colours     int
+		index       int
+		expectation []int
 	}
 
 	scenarios := []TestScenario{
-		{numberOfColours: 4, index: 0, expectation: []int{0, 0, 0, 0}},
-		{numberOfColours: 4, index: 1, expectation: []int{0, 0, 0, 1}},
-		{numberOfColours: 4, index: 255, expectation: []int{3, 3, 3, 3}},
-		{numberOfColours: 10, index: 4, expectation: []int{0, 0, 0, 4}},
+		{colours: 4, index: 0, expectation: []int{0, 0, 0, 0}},
+		{colours: 4, index: 1, expectation: []int{0, 0, 0, 1}},
+		{colours: 4, index: 255, expectation: []int{3, 3, 3, 3}},
+		{colours: 10, index: 4, expectation: []int{0, 0, 0, 4}},
 	}
 
 	for _, scenario := range scenarios {
-		code := IndexToCode(len(scenario.expectation), scenario.numberOfColours, scenario.index)
+		code := IndexToCode(Rules{len(scenario.expectation), scenario.colours}, scenario.index)
 
 		if !reflect.DeepEqual(code, scenario.expectation) {
 			t.Error("Expected code", scenario.expectation, "but got", code, "for index",
-				scenario.index, "and", scenario.numberOfColours, "colours")
+				scenario.index, "and", scenario.colours, "colours")
 		}
 	}
 }
@@ -61,8 +61,8 @@ func TestGuessIsPossible(t *testing.T) {
 	}
 
 	possible := []TestScenario{
-		{facts: []CodeScore{{guess: []int{0, 1, 2, 3}, score: Score{rightValueAndPosition: 1}}}, guess: []int{1, 1, 1, 1}},
-		{facts: []CodeScore{{guess: []int{1, 2, 2, 2}, score: Score{rightValueWrongPosition: 1}}}, guess: []int{0, 1, 0, 0}},
+		{facts: []CodeScore{{guess: []int{0, 1, 2, 3}, score: Score{correct: 1}}}, guess: []int{1, 1, 1, 1}},
+		{facts: []CodeScore{{guess: []int{1, 2, 2, 2}, score: Score{misplaced: 1}}}, guess: []int{0, 1, 0, 0}},
 	}
 
 	for _, scenario := range possible {
@@ -74,16 +74,17 @@ func TestGuessIsPossible(t *testing.T) {
 
 func TestFindKnuthPaperSolution(t *testing.T) {
 	facts := []CodeScore{
-		{guess: []int{0, 0, 1, 1}, score: Score{rightValueAndPosition: 1}},
-		{guess: []int{0, 2, 3, 3}, score: Score{rightValueWrongPosition: 1}},
-		{guess: []int{2, 4, 1, 5}, score: Score{rightValueAndPosition: 1, rightValueWrongPosition: 2}},
-		{guess: []int{0, 3, 5, 1}, score: Score{rightValueAndPosition: 1, rightValueWrongPosition: 1}},
+		{guess: []int{0, 0, 1, 1}, score: Score{correct: 1}},
+		{guess: []int{0, 2, 3, 3}, score: Score{misplaced: 1}},
+		{guess: []int{2, 4, 1, 5}, score: Score{correct: 1, misplaced: 2}},
+		{guess: []int{0, 3, 5, 1}, score: Score{correct: 1, misplaced: 1}},
 	}
 
-	combinations := NumberOfCombinations(4, 6)
+	rules := Rules{4, 6}
+	combinations := NumberOfCombinations(rules)
 	matches := [][]int{}
 	for i := 0; i < combinations; i++ {
-		guess := IndexToCode(4, 6, i)
+		guess := IndexToCode(rules, i)
 
 		if GuessIsPossible(facts, guess) {
 			matches = append(matches, guess)
@@ -96,9 +97,10 @@ func TestFindKnuthPaperSolution(t *testing.T) {
 }
 
 func TestCodeToIndex(t *testing.T) {
+	rules := Rules{2, 2}
 	for i := 0; i < 4; i++ {
-		code := IndexToCode(2, 2, i)
-		index := CodeToIndex(2, 2, code)
+		code := IndexToCode(rules, i)
+		index := CodeToIndex(rules, code)
 
 		if index != i {
 			t.Error("Expected code", code, "to have index", i, "but got", index)
@@ -108,33 +110,33 @@ func TestCodeToIndex(t *testing.T) {
 
 func TestFindPossibleCodesIndicies(t *testing.T) {
 	facts := []CodeScore{
-		{guess: []int{1, 1}, score: Score{rightValueAndPosition: 1}},
+		{guess: []int{1, 1}, score: Score{correct: 1}},
 	}
 
-	possibleCodes := FindPossibleCodesIndicies(2, 2, facts)
+	possibleCodes := FindPossibleCodesIndicies(Rules{2, 2}, facts)
 
 	expectation := []uint64{1, 2}
 	assert.Equal(t, expectation, possibleCodes.ToNums(), "code indices should match")
 }
 
 func TestPossibleNonFinalScores(t *testing.T) {
-	result := PossibleScores(3)
+	result := PossibleScores(Rules{3, 4})
 	expectation := []Score{
 		{},
-		{rightValueWrongPosition: 1},
-		{rightValueWrongPosition: 2},
-		{rightValueWrongPosition: 3},
-		{rightValueAndPosition: 1},
-		{rightValueAndPosition: 1, rightValueWrongPosition: 1},
-		{rightValueAndPosition: 1, rightValueWrongPosition: 2},
-		{rightValueAndPosition: 2},
-		{rightValueAndPosition: 3},
+		{misplaced: 1},
+		{misplaced: 2},
+		{misplaced: 3},
+		{correct: 1},
+		{correct: 1, misplaced: 1},
+		{correct: 1, misplaced: 2},
+		{correct: 2},
+		{correct: 3},
 	}
 
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].rightValueAndPosition < result[j].rightValueAndPosition ||
-			(result[i].rightValueAndPosition == result[j].rightValueAndPosition &&
-				result[i].rightValueWrongPosition < result[j].rightValueWrongPosition)
+		return result[i].correct < result[j].correct ||
+			(result[i].correct == result[j].correct &&
+				result[i].misplaced < result[j].misplaced)
 	})
 
 	assert.Equal(t, expectation, result, "did not get expected scores")
