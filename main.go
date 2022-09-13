@@ -142,6 +142,24 @@ func PossibleScores(rules Rules) []Score {
 	return result
 }
 
+func FindMaxPossibleCountForGuess(rules Rules, facts []CodeScore, guess []int) int {
+	result := 0
+	possibleScores := PossibleScores(rules)
+
+	facts = append(facts, CodeScore{guess: guess})
+	lastFactIndex := len(facts) - 1
+	for _, score := range possibleScores {
+		facts[lastFactIndex].score = score
+		count, _ := FindPossibleCodes(rules, facts)
+
+		if count > result {
+			result = count
+		}
+	}
+
+	return result
+}
+
 func main() {
 	rules := Rules{3, 4}
 	numberOfCombinations := NumberOfCombinations(rules)
