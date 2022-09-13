@@ -135,7 +135,19 @@ func TestFindMaxPossibleCountForGuess(t *testing.T) {
 	assert.Equal(t, 1, result, "expected max count of one")
 }
 
-func TestPossibleNonFinalScores(t *testing.T) {
+func TestFindBestGuess(t *testing.T) {
+	facts := []CodeScore{
+		{guess: []int{0, 0, 1, 1}, score: Score{correct: 1}},
+		{guess: []int{0, 2, 3, 3}, score: Score{misplaced: 1}},
+		{guess: []int{2, 4, 1, 5}, score: Score{correct: 1, misplaced: 2}},
+	}
+	rules := Rules{4, 6}
+
+	result := FindBestGuess(rules, facts)
+	assert.ElementsMatch(t, []int{0, 0, 5, 1}, result)
+}
+
+func TestPossibleScores(t *testing.T) {
 	result := PossibleScores(Rules{3, 4})
 	expectation := []Score{
 		{},

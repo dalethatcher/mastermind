@@ -160,6 +160,25 @@ func FindMaxPossibleCountForGuess(rules Rules, facts []CodeScore, guess []int) i
 	return result
 }
 
+func FindBestGuess(rules Rules, facts []CodeScore) []int {
+	result := []int{}
+
+	numberOfCombinations := NumberOfCombinations(rules)
+	lowestCount := numberOfCombinations
+
+	for i := 0; i < numberOfCombinations; i++ {
+		guess := IndexToCode(rules, i)
+		count := FindMaxPossibleCountForGuess(rules, facts, guess)
+
+		if count < lowestCount {
+			lowestCount = count
+			result = guess
+		}
+	}
+
+	return result
+}
+
 func main() {
 	rules := Rules{3, 4}
 	numberOfCombinations := NumberOfCombinations(rules)
