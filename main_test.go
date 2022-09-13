@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCalculateScore(t *testing.T) {
@@ -113,10 +114,11 @@ func TestFindPossibleCodesIndicies(t *testing.T) {
 		{guess: []int{1, 1}, score: Score{correct: 1}},
 	}
 
-	possibleCodes := FindPossibleCodesIndicies(Rules{2, 2}, facts)
+	count, possibleCodes := FindPossibleCodes(Rules{2, 2}, facts)
 
 	expectation := []uint64{1, 2}
 	assert.Equal(t, expectation, possibleCodes.ToNums(), "code indices should match")
+	assert.Equal(t, 2, count, "possible codes count")
 }
 
 func TestPossibleNonFinalScores(t *testing.T) {

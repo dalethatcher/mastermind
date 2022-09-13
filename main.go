@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/golang-collections/go-datastructures/bitarray"
 	"log"
 	"math"
+
+	"github.com/golang-collections/go-datastructures/bitarray"
 )
 
 type Rules struct {
@@ -108,21 +109,23 @@ func GuessIsPossible(facts []CodeScore, guess []int) bool {
 	return true
 }
 
-func FindPossibleCodesIndicies(rules Rules, facts []CodeScore) bitarray.BitArray {
-	result := bitarray.NewBitArray(uint64(NumberOfCombinations(rules)))
+func FindPossibleCodes(rules Rules, facts []CodeScore) (int, bitarray.BitArray) {
+	count := 0
+	codes := bitarray.NewBitArray(uint64(NumberOfCombinations(rules)))
 
 	combinations := NumberOfCombinations(rules)
 	for i := 0; i < combinations; i++ {
 		guess := IndexToCode(rules, i)
 
 		if GuessIsPossible(facts, guess) {
-			if result.SetBit(uint64(i)) != nil {
+			count++
+			if codes.SetBit(uint64(i)) != nil {
 				log.Panicln("Failed to set bit ", i)
 			}
 		}
 	}
 
-	return result
+	return count, codes
 }
 
 func PossibleScores(rules Rules) []Score {
