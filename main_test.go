@@ -144,7 +144,7 @@ func TestFindBestGuess(t *testing.T) {
 	rules := Rules{4, 6}
 
 	result := FindBestGuess(rules, facts)
-	assert.ElementsMatch(t, []int{0, 0, 5, 1}, result)
+	assert.Equal(t, []int{0, 0, 5, 1}, result)
 }
 
 func TestPossibleScores(t *testing.T) {
@@ -168,4 +168,17 @@ func TestPossibleScores(t *testing.T) {
 	})
 
 	assert.Equal(t, expectation, result, "did not get expected scores")
+}
+
+func TestFindBestGuessWhenThereIsOnlyOneRemaining(t *testing.T) {
+	rules := Rules{4, 6}
+	facts := []CodeScore{
+		{guess: []int{0, 0, 1, 1}, score: Score{correct: 1}},
+		{guess: []int{0, 2, 3, 3}, score: Score{misplaced: 1}},
+		{guess: []int{2, 4, 1, 5}, score: Score{correct: 1, misplaced: 2}},
+		{guess: []int{0, 3, 5, 1}, score: Score{correct: 1, misplaced: 1}},
+	}
+
+	guess := FindBestGuess(rules, facts)
+	assert.Equal(t, guess, []int{2, 5, 2, 1})
 }

@@ -163,6 +163,13 @@ func FindMaxPossibleCountForGuess(rules Rules, facts []CodeScore, guess []int) i
 func FindBestGuess(rules Rules, facts []CodeScore) []int {
 	result := []int{}
 
+	remainingCount, remainingCandidates := FindPossibleCodes(rules, facts)
+	if remainingCount == 1 || remainingCount == 2 {
+		index := int(remainingCandidates.ToNums()[0])
+
+		return IndexToCode(rules, index)
+	}
+
 	numberOfCombinations := NumberOfCombinations(rules)
 	lowestCount := numberOfCombinations
 
@@ -180,22 +187,25 @@ func FindBestGuess(rules Rules, facts []CodeScore) []int {
 }
 
 func main() {
-	rules := Rules{3, 4}
-	numberOfCombinations := NumberOfCombinations(rules)
-	foundScores := make(map[Score]bool)
+	rules := Rules{holes: 4, colours: 6}
+	code := []int{2, 5, 2, 1}
+	facts := []CodeScore{}
 
-	for i := 0; i < numberOfCombinations; i++ {
-		code := IndexToCode(rules, i)
+	for {
+		fmt.Println("Thinking...")
+		guess := FindBestGuess(rules, facts)
 
-		for j := 0; j < numberOfCombinations; j++ {
-			guess := IndexToCode(rules, j)
+		fmt.Println("Guessing", guess)
+		score := CalculateScore(code, guess)
+		fmt.Println("    score", score)
 
-			score := CalculateScore(code, guess)
-
-			if _, ok := foundScores[score]; !ok {
-				fmt.Println("Found new score:", score)
-				foundScores[score] = true
-			}
+		if score.correct == 4 {
+			fmt.Println("Code found")
+			break
 		}
+
+		facts = append(facts, CodeScore{guess: guess, score: score})
+		count, _ := FindPossibleCodes(rules, facts)
+		fmt.Println("    remaining possibilities", count)
 	}
 }
