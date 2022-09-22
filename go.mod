@@ -1,4 +1,4 @@
-module mastermind
+module github.com/dalethatcher/mastermind
 
 go 1.19
 
