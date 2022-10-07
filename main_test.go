@@ -52,7 +52,12 @@ func TestIndexToCode(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		code := IndexToCode(NewRules(len(scenario.expectation), scenario.colours), scenario.index)
+		code := make([]int, len(scenario.expectation))
+		for i := 0; i < len(scenario.expectation); i++ {
+			code[i] = 9999
+		}
+
+		IndexToCode(NewRules(len(scenario.expectation), scenario.colours), scenario.index, code)
 
 		if !reflect.DeepEqual(code, scenario.expectation) {
 			t.Error("Expected code", scenario.expectation, "but got", code, "for index",
@@ -89,11 +94,13 @@ func TestFindKnuthPaperSolution(t *testing.T) {
 
 	rules := NewRules(4, 6)
 	matches := [][]int{}
+	guess := make([]int, rules.holes)
 	for i := 0; i < rules.combinations; i++ {
-		guess := IndexToCode(rules, i)
+		IndexToCode(rules, i, guess)
 
 		if GuessIsPossible(facts, guess) {
 			matches = append(matches, guess)
+			guess = make([]int, rules.holes)
 		}
 	}
 
@@ -104,8 +111,9 @@ func TestFindKnuthPaperSolution(t *testing.T) {
 
 func TestCodeToIndex(t *testing.T) {
 	rules := NewRules(2, 2)
+	code := make([]int, 2)
 	for i := 0; i < 4; i++ {
-		code := IndexToCode(rules, i)
+		IndexToCode(rules, i, code)
 		index := CodeToIndex(rules, code)
 
 		if index != i {

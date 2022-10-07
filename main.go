@@ -67,21 +67,22 @@ func CalculateScore(code []int, guess []int) Score {
 	return result
 }
 
-func IndexToCode(rules Rules, index int) []int {
+func IndexToCode(rules Rules, index int, code []int) {
 	if index > rules.combinations-1 {
 		panic(fmt.Sprint("index ", index, " is larger than the number of combinations for ", rules.holes,
 			" holes and ", rules.colours, " colours!"))
 	}
 
-	result := make([]int, rules.holes)
-	for i := rules.holes - 1; i >= 0 && index > 0; i-- {
-		colour := index % rules.colours
+	for i := rules.holes - 1; i >= 0; i-- {
+		if index <= 0 {
+			code[i] = 0
+		} else {
+			colour := index % rules.colours
 
-		result[i] = colour
-		index = index / rules.colours
+			code[i] = colour
+			index = index / rules.colours
+		}
 	}
-
-	return result
 }
 
 func CodeToIndex(rules Rules, code []int) int {
@@ -120,8 +121,9 @@ func FindPossibleCodes(rules Rules, facts []CodeScore) (int, bitarray.BitArray) 
 	count := 0
 	codes := bitarray.NewBitArray(uint64(rules.combinations))
 
+	guess := make([]int, rules.holes)
 	for i := 0; i < rules.combinations; i++ {
-		guess := IndexToCode(rules, i)
+		IndexToCode(rules, i, guess)
 
 		if GuessIsPossible(facts, guess) {
 			count++
@@ -167,24 +169,28 @@ func FindMaxPossibleCountForGuess(rules Rules, facts []CodeScore, guess []int) i
 }
 
 func FindBestGuess(rules Rules, facts []CodeScore) []int {
-	result := []int{}
+	result := make([]int, rules.holes)
 
 	remainingCount, remainingCandidates := FindPossibleCodes(rules, facts)
 	if remainingCount == 1 || remainingCount == 2 {
 		index := int(remainingCandidates.ToNums()[0])
 
-		return IndexToCode(rules, index)
+		IndexToCode(rules, index, result)
+		return result
 	}
 
 	lowestCount := rules.combinations
+	guess := make([]int, rules.holes)
 
 	for i := 0; i < rules.combinations; i++ {
-		guess := IndexToCode(rules, i)
+		IndexToCode(rules, i, guess)
 		count := FindMaxPossibleCountForGuess(rules, facts, guess)
 
 		if count < lowestCount {
 			lowestCount = count
-			result = guess
+			for h := 0; h < rules.holes; h++ {
+				result[h] = guess[h]
+			}
 		}
 	}
 
