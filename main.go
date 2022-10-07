@@ -4,13 +4,16 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"os"
+	"runtime/pprof"
 
 	"github.com/golang-collections/go-datastructures/bitarray"
 )
 
 type Rules struct {
-	holes   int
-	colours int
+	holes        int
+	colours      int
+	combinations int
 }
 
 type Score struct {
@@ -21,6 +24,14 @@ type Score struct {
 type CodeScore struct {
 	guess []int
 	score Score
+}
+
+func NewRules(holes int, colours int) Rules {
+	return Rules{
+		holes:        holes,
+		colours:      colours,
+		combinations: int(math.Pow(float64(colours), float64(holes))),
+	}
 }
 
 func CalculateScore(code []int, guess []int) Score {
@@ -57,7 +68,7 @@ func CalculateScore(code []int, guess []int) Score {
 }
 
 func IndexToCode(rules Rules, index int) []int {
-	if index > NumberOfCombinations(rules)-1 {
+	if index > rules.combinations-1 {
 		panic(fmt.Sprint("index ", index, " is larger than the number of combinations for ", rules.holes,
 			" holes and ", rules.colours, " colours!"))
 	}
@@ -93,10 +104,6 @@ func SetBits(ba *bitarray.BitArray, bits []int) error {
 	return nil
 }
 
-func NumberOfCombinations(rules Rules) int {
-	return int(math.Pow(float64(rules.colours), float64(rules.holes)))
-}
-
 func GuessIsPossible(facts []CodeScore, guess []int) bool {
 	for _, fact := range facts {
 		score := CalculateScore(guess, fact.guess)
@@ -111,10 +118,9 @@ func GuessIsPossible(facts []CodeScore, guess []int) bool {
 
 func FindPossibleCodes(rules Rules, facts []CodeScore) (int, bitarray.BitArray) {
 	count := 0
-	codes := bitarray.NewBitArray(uint64(NumberOfCombinations(rules)))
+	codes := bitarray.NewBitArray(uint64(rules.combinations))
 
-	combinations := NumberOfCombinations(rules)
-	for i := 0; i < combinations; i++ {
+	for i := 0; i < rules.combinations; i++ {
 		guess := IndexToCode(rules, i)
 
 		if GuessIsPossible(facts, guess) {
@@ -170,10 +176,9 @@ func FindBestGuess(rules Rules, facts []CodeScore) []int {
 		return IndexToCode(rules, index)
 	}
 
-	numberOfCombinations := NumberOfCombinations(rules)
-	lowestCount := numberOfCombinations
+	lowestCount := rules.combinations
 
-	for i := 0; i < numberOfCombinations; i++ {
+	for i := 0; i < rules.combinations; i++ {
 		guess := IndexToCode(rules, i)
 		count := FindMaxPossibleCountForGuess(rules, facts, guess)
 
@@ -186,8 +191,20 @@ func FindBestGuess(rules Rules, facts []CodeScore) []int {
 	return result
 }
 
+const profile = false
+
 func main() {
-	rules := Rules{holes: 4, colours: 6}
+	if profile {
+		f, err := os.Create("profile.cpu")
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+
+	rules := NewRules(4, 6)
 	code := []int{2, 5, 2, 1}
 	facts := []CodeScore{}
 

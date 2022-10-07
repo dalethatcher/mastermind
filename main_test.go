@@ -8,6 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewRules(t *testing.T) {
+	rules := NewRules(4, 6)
+
+	assert.Equal(t, 1296, rules.combinations)
+}
+
 func TestCalculateScore(t *testing.T) {
 	type TestScenario struct {
 		code        []int
@@ -46,7 +52,7 @@ func TestIndexToCode(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		code := IndexToCode(Rules{len(scenario.expectation), scenario.colours}, scenario.index)
+		code := IndexToCode(NewRules(len(scenario.expectation), scenario.colours), scenario.index)
 
 		if !reflect.DeepEqual(code, scenario.expectation) {
 			t.Error("Expected code", scenario.expectation, "but got", code, "for index",
@@ -81,10 +87,9 @@ func TestFindKnuthPaperSolution(t *testing.T) {
 		{guess: []int{0, 3, 5, 1}, score: Score{correct: 1, misplaced: 1}},
 	}
 
-	rules := Rules{4, 6}
-	combinations := NumberOfCombinations(rules)
+	rules := NewRules(4, 6)
 	matches := [][]int{}
-	for i := 0; i < combinations; i++ {
+	for i := 0; i < rules.combinations; i++ {
 		guess := IndexToCode(rules, i)
 
 		if GuessIsPossible(facts, guess) {
@@ -98,7 +103,7 @@ func TestFindKnuthPaperSolution(t *testing.T) {
 }
 
 func TestCodeToIndex(t *testing.T) {
-	rules := Rules{2, 2}
+	rules := NewRules(2, 2)
 	for i := 0; i < 4; i++ {
 		code := IndexToCode(rules, i)
 		index := CodeToIndex(rules, code)
@@ -114,7 +119,7 @@ func TestFindPossibleCodesIndicies(t *testing.T) {
 		{guess: []int{1, 1}, score: Score{correct: 1}},
 	}
 
-	count, possibleCodes := FindPossibleCodes(Rules{2, 2}, facts)
+	count, possibleCodes := FindPossibleCodes(NewRules(2, 2), facts)
 
 	expectation := []uint64{1, 2}
 	assert.Equal(t, expectation, possibleCodes.ToNums(), "code indices should match")
@@ -129,7 +134,7 @@ func TestFindMaxPossibleCountForGuess(t *testing.T) {
 	}
 	guess := []int{0, 3, 5, 1}
 
-	rules := Rules{4, 6}
+	rules := NewRules(4, 6)
 	result := FindMaxPossibleCountForGuess(rules, facts, guess)
 
 	assert.Equal(t, 1, result, "expected max count of one")
@@ -141,14 +146,14 @@ func TestFindBestGuess(t *testing.T) {
 		{guess: []int{0, 2, 3, 3}, score: Score{misplaced: 1}},
 		{guess: []int{2, 4, 1, 5}, score: Score{correct: 1, misplaced: 2}},
 	}
-	rules := Rules{4, 6}
+	rules := NewRules(4, 6)
 
 	result := FindBestGuess(rules, facts)
 	assert.Equal(t, []int{0, 0, 5, 1}, result)
 }
 
 func TestPossibleScores(t *testing.T) {
-	result := PossibleScores(Rules{3, 4})
+	result := PossibleScores(NewRules(3, 4))
 	expectation := []Score{
 		{},
 		{misplaced: 1},
@@ -171,7 +176,7 @@ func TestPossibleScores(t *testing.T) {
 }
 
 func TestFindBestGuessWhenThereIsOnlyOneRemaining(t *testing.T) {
-	rules := Rules{4, 6}
+	rules := NewRules(4, 6)
 	facts := []CodeScore{
 		{guess: []int{0, 0, 1, 1}, score: Score{correct: 1}},
 		{guess: []int{0, 2, 3, 3}, score: Score{misplaced: 1}},
